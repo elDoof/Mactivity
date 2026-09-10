@@ -60,8 +60,14 @@ UNIVERSAL=1 HARDENED=1 SIGN_IDENTITY="${SIGN_IDENTITY}" ./build_app.sh
 echo "==> Verifying signature"
 codesign --verify --strict --deep --verbose=2 "${APP_BUNDLE}"
 # A hardened runtime is what makes the bundle eligible for notarization.
-codesign -d --verbose=2 "${APP_BUNDLE}" 2>&1 | grep -q "runtime" \
-    || { echo "error: hardened runtime flag missing from the signature." >&2; exit 1; }
+# Captured rather than piped into grep: grep -q closes the pipe on its first
+# match, codesign then dies of SIGPIPE, and pipefail fails the whole pipeline
+# even though the match succeeded.
+SIGNATURE_INFO="$(codesign -d --verbose=2 "${APP_BUNDLE}" 2>&1)"
+case "${SIGNATURE_INFO}" in
+    *"(runtime)"*) echo "    hardened runtime: yes" ;;
+    *) echo "error: hardened runtime flag missing from the signature." >&2; exit 1 ;;
+esac
 
 if [ "${SKIP_NOTARIZE}" != "1" ]; then
     # 2. Notarize the app, then staple the ticket into the bundle so Gatekeeper

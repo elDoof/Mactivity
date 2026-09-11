@@ -343,6 +343,9 @@ struct ContentView: View {
     @AppStorage("menuBarShowRAM") private var menuBarShowRAM = false
     @AppStorage("menuBarShowNetwork") private var menuBarShowNetwork = false
     @AppStorage("menuBarShowBattery") private var menuBarShowBattery = false
+    @AppStorage("automaticUpdateChecks") private var automaticUpdateChecks = true
+
+    @ObservedObject private var updater = Updater.shared
 
     @State private var showingSettings = false
     @State private var headerHeight: CGFloat = 0
@@ -485,6 +488,15 @@ struct ContentView: View {
                 }
             }
 
+            settingsSection("UPDATES") {
+                HStack {
+                    Text("Version \(updater.currentVersion)").font(.system(size: 12))
+                    Spacer()
+                }
+                Toggle("Check automatically", isOn: $automaticUpdateChecks)
+                updateControls
+            }
+
             // An LSUIElement app has no menu bar of its own, so without this
             // there is no way to quit short of force-killing it.
             Button {
@@ -506,6 +518,64 @@ struct ContentView: View {
         .controlSize(.small)
         .padding(.horizontal, 16)
         .padding(.top, 4)
+    }
+
+    /// The update pane never installs anything on its own: each step past
+    /// "an update exists" is a separate, explicit click.
+    @ViewBuilder
+    private var updateControls: some View {
+        if !updater.canUpdate {
+            Text("Updates are only available in an installed copy of Mactivity.")
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            switch updater.status {
+            case .idle:
+                updateButton("Check for Updates") { updater.checkNow() }
+            case .checking:
+                updateNote("Checking...")
+            case .upToDate:
+                updateNote("Mactivity is up to date.")
+                updateButton("Check Again") { updater.checkNow() }
+            case .available(let version):
+                updateNote("Version \(version) is available.")
+                updateButton("Download \(version)") { updater.downloadUpdate() }
+            case .downloading:
+                updateNote("Downloading...")
+            case .verifying:
+                updateNote("Verifying signature...")
+            case .readyToInstall(let version):
+                updateNote("Version \(version) is ready to install.")
+                updateButton("Install and Relaunch") { updater.installAndRelaunch() }
+            case .failed(let message):
+                Text(message)
+                    .font(.system(size: 9))
+                    .foregroundColor(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                updateButton("Try Again") { updater.checkNow() }
+            }
+        }
+    }
+
+    private func updateNote(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10))
+            .foregroundColor(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func updateButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+                .background(appTheme.color.opacity(0.2))
+                .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
+        .disabled(updater.isBusy)
     }
 
     private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {

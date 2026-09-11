@@ -20,6 +20,8 @@ and no network access.
   one from the list.
 - **Detachable widget** — float the panel above other windows on any Space.
 - **Compact mode**, six accent colours, and Launch at Login.
+- **In-app updates** — Mactivity checks for new versions once a day and can
+  install one in place. Nothing is downloaded or replaced without asking.
 
 Idle cost is about 1% of one core. With the floating widget visible and every
 graph updating once a second, it settles around 8%.
@@ -43,6 +45,21 @@ shasum -a 256 -c SHA256SUMS.txt
 
 Mactivity has no window of its own — after launching, look for the waveform
 icon in the menu bar.
+
+## Updates
+
+Mactivity checks GitHub for a new release once a day and offers it in the
+settings pane; automatic checking can be turned off there, and **Check for
+Updates** is always available. Finding, downloading and installing an update
+are three separate, explicit steps — nothing is replaced behind your back.
+
+An update is installed only if it is signed by the same Developer ID team as
+the copy you are running, carries the expected bundle identifier, passes
+Apple's notarization assessment, and is strictly newer than the installed
+version. A build failing any of those checks is discarded. If the replacement
+itself fails, the previous version is moved back into place.
+
+Updating requires write access to wherever Mactivity is installed.
 
 ## Usage notes
 

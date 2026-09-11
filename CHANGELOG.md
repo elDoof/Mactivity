@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- In-app updater: checks GitHub Releases daily, and installs a new version in
+  place after verifying its Developer ID signature, bundle identifier and
+  notarization. Downgrades are refused and a failed replacement rolls back.
+
 ## 1.0.0
 
 First release.

@@ -15,6 +15,7 @@ enum Defaults {
         "menuBarShowRAM": false,
         "menuBarShowNetwork": false,
         "menuBarShowBattery": false,
+        "automaticUpdateChecks": true,
     ]
 }
 
@@ -23,6 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     var popover: NSPopover!
     var monitor = ActivityMonitor()
     private var labelTimer: Timer?
+    private var updateTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         UserDefaults.standard.register(defaults: Defaults.registry)
@@ -56,6 +58,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         RunLoop.main.add(timer, forMode: .common)
         labelTimer = timer
 
+        // Check for updates shortly after launch rather than during it, so a
+        // slow network cannot hold up the menu bar appearing. The updater
+        // itself only actually contacts the network once a day.
+        Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
+            Task { @MainActor in Updater.shared.checkInBackground() }
+        }
+        let updateTimer = Timer(timeInterval: 60 * 60 * 6, repeats: true) { _ in
+            Task { @MainActor in Updater.shared.checkInBackground() }
+        }
+        RunLoop.main.add(updateTimer, forMode: .common)
+        self.updateTimer = updateTimer
+
         // Restore the floating widget if it was left enabled.
         if UserDefaults.standard.bool(forKey: "isFloatingWidget") {
             FloatingWindowManager.shared.toggle(monitor: monitor, isFloating: true)
@@ -64,6 +78,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         labelTimer?.invalidate()
+        updateTimer?.invalidate()
         monitor.stopMonitoring()
     }
 

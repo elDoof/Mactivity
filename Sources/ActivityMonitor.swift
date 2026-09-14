@@ -63,9 +63,6 @@ class ActivityMonitor: ObservableObject {
     @Published var memoryPressure: String = "Normal"
     @Published var memoryPressureColor: Color = .green
 
-    @Published var isPurging: Bool = false
-    @Published var purgeError: String?
-
     private let maxHistoryItems = 60
 
     private var timer: Timer?
@@ -208,54 +205,6 @@ class ActivityMonitor: ObservableObject {
         guard pid > 0 else { return }
         kill(pid, force ? SIGKILL : SIGTERM)
         topProcesses.removeAll { $0.pid == pid }
-    }
-
-    /// `purge` needs root, so it goes through the administrator-privileges
-    /// prompt. This shells out to osascript rather than using NSAppleScript,
-    /// which is documented as main-thread-only — running it on a background
-    /// queue keeps the authentication dialog from blocking the UI without
-    /// relying on an API that is not thread-safe.
-    func purgeMemory() {
-        guard !isPurging else { return }
-        isPurging = true
-        purgeError = nil
-
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            task.arguments = ["-e", "do shell script \"purge\" with administrator privileges"]
-            let errorPipe = Pipe()
-            task.standardOutput = FileHandle.nullDevice
-            task.standardError = errorPipe
-
-            var message: String?
-            do {
-                try task.run()
-                // Drain before waiting so a full pipe cannot deadlock us.
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                task.waitUntilExit()
-
-                if task.terminationStatus != 0 {
-                    let text = String(data: errorData, encoding: .utf8)?
-                        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                    // -128 is the user dismissing the password prompt, which is
-                    // a deliberate cancel rather than a failure to report.
-                    if !text.contains("-128") {
-                        message = text.isEmpty ? "Purge failed." : text
-                    }
-                }
-            } catch {
-                message = error.localizedDescription
-            }
-
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.isPurging = false
-                self.purgeError = message
-                // Show the reclaimed memory now instead of up to a second later.
-                self.updateMemoryUsage()
-            }
-        }
     }
 
     private func updateDiskIO() {

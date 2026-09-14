@@ -18,11 +18,18 @@ jobs:
       - name: Build (release)
         run: swift build -c release
 
-      - name: Assemble app bundle
-        run: ./build_app.sh
+      # Universal, matching the artifact that is actually released, so an
+      # Intel-only break surfaces here rather than at release time.
+      - name: Assemble app bundle (universal)
+        run: UNIVERSAL=1 ./build_app.sh
 
       - name: Verify bundle
         run: |
           test -x MactivityMonitor.app/Contents/MacOS/MactivityMonitor
           plutil -lint MactivityMonitor.app/Contents/Info.plist
           codesign --verify --strict --verbose=2 MactivityMonitor.app
+
+          ARCHS="$(lipo -archs MactivityMonitor.app/Contents/MacOS/MactivityMonitor)"
+          echo "architectures: ${ARCHS}"
+          case "${ARCHS}" in *x86_64*) ;; *) echo "missing x86_64" >&2; exit 1 ;; esac
+          case "${ARCHS}" in *arm64*) ;; *) echo "missing arm64" >&2; exit 1 ;; esac

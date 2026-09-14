@@ -5,6 +5,10 @@
 - In-app updater: checks GitHub Releases daily, and installs a new version in
   place after verifying its Developer ID signature, bundle identifier and
   notarization. Downgrades are refused and a failed replacement rolls back.
+- Removed Purge Memory. `purge` is of debatable value on current macOS and was
+  the only feature needing an administrator password.
+- Build numbers now stay monotonic past a two-digit version component; 1.0.10
+  previously outranked 1.1.0, which macOS reads as a downgrade.
 
 ## 1.0.0
 

@@ -659,26 +659,6 @@ struct ContentView: View {
                             Text(monitor.compressedMemoryString).font(.system(size: 11, weight: .medium, design: .monospaced))
                         }
                     }
-                    Button {
-                        monitor.purgeMemory()
-                    } label: {
-                        Text(monitor.isPurging ? "Purging..." : "Purge Memory (Requires Admin)")
-                            .font(.system(size: 10, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 4)
-                            .background(Color.purple.opacity(monitor.isPurging ? 0.1 : 0.2))
-                            .cornerRadius(6)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .disabled(monitor.isPurging)
-                    .padding(.top, 4)
-
-                    if let purgeError = monitor.purgeError {
-                        Text(purgeError)
-                            .font(.system(size: 9))
-                            .foregroundColor(.orange)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
                 }
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(NSColor.controlBackgroundColor).opacity(0.6)))

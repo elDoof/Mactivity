@@ -15,7 +15,7 @@ and no network access.
   60-second history graph for each.
 - **Per-core load** — a live bar for every performance and efficiency core.
 - **Memory detail** — app, wired and compressed breakdown, live memory
-  pressure, and a one-click `purge` to release inactive memory.
+  pressure.
 - **Top processes** — the five heaviest CPU consumers, with the option to quit
   one from the list.
 - **Detachable widget** — float the panel above other windows on any Space.
@@ -66,8 +66,6 @@ Updating requires write access to wherever Mactivity is installed.
 - **Launch at Login** only works for a copy in `/Applications`. macOS registers
   the login item by its location, so a build run from elsewhere cannot be
   registered.
-- **Purge Memory** runs the system `purge` command, which requires
-  administrator rights; macOS will ask for your password.
 - **Quitting a process** sends `SIGTERM`, letting it shut down and save. Hold
   **Option** while clicking to send `SIGKILL` instead, which is immediate but
   discards unsaved work.

@@ -21,7 +21,11 @@ MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 
 VERSION="$(tr -d '[:space:]' < VERSION)"
-BUILD="${BUILD:-$(echo "$VERSION" | tr -d '.')}"
+# Stripping the dots would not stay monotonic: 1.0.10 becomes 1010 and
+# outranks 1.1.0's 110, which macOS reads as a downgrade. Give each component
+# a fixed range instead.
+IFS=. read -r VERSION_MAJOR VERSION_MINOR VERSION_PATCH <<< "${VERSION}"
+BUILD="${BUILD:-$(( ${VERSION_MAJOR:-0} * 10000 + ${VERSION_MINOR:-0} * 100 + ${VERSION_PATCH:-0} ))}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 UNIVERSAL="${UNIVERSAL:-0}"
 HARDENED="${HARDENED:-0}"
@@ -101,8 +105,6 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <true/>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Sascha Nowlin. MIT licensed.</string>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Mactivity needs to run the system purge command to free inactive memory.</string>
 </dict>
 </plist>
 EOF
